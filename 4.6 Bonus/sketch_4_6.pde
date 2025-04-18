@@ -6,10 +6,12 @@ int tailleCarre = 25;
 int[] limiteCarre = new int[tableau.length];
 boolean autorisationDeJeu = true;
 int score = 0;
+PImage imgMine;
 
 
 void setup() {
   size(500, 250);
+  imgMine = loadImage("mine.png");
   textSize(tailleCarre);
   creationTableauLimiteCarre();
 }
@@ -21,7 +23,7 @@ void keyPressed() {
   autorisationDeJeu = true;
   background(255, 255, 255);
   score = 0;
-  tableau = initBoard(10, 10, 10);
+  tableau = initBoard(10, 10, mines);
 }
 void mouseClicked() {
   if (autorisationDeJeu) {
@@ -31,12 +33,8 @@ void mouseClicked() {
       int positionXDansTableau = caseEnFonctionDePosi(mouseX);
       int positionYDansTableau = caseEnFonctionDePosi(mouseY);
 
-      if (isAMine(tableau[positionXDansTableau][positionYDansTableau][0])) {
-        println("mine");
-      } else if (tableau[positionXDansTableau][positionYDansTableau][1] == 0) {
+      if (tableau[positionXDansTableau][positionYDansTableau][1] == 0) {
         decouvreLesCasesAllentours(positionXDansTableau, positionYDansTableau);
-        score++;
-        println(score);
       }
       //Rend visible la case sélectionné
       tableau[positionXDansTableau][positionYDansTableau][1] = 1;
@@ -68,6 +66,7 @@ void generateurCarre() {
   //Verrifie si toutes les cases sont découvertes
   if (score >= (nbCases * nbCases) - mines) {
     autorisationDeJeu = false;
+    decouvreTouteLesMines();
     text(score, 310, 200);
     text("Win ", 310, 120);
   }
@@ -79,26 +78,21 @@ void generateurCarre() {
       if (tableau[x][y][1] == 1) {
         if (isAMine(tableau[x][y][0])) {
           autorisationDeJeu = false;
+          decouvreTouteLesMines();
           fill(255, 0, 0);
-          rect(posiCarreX, posiCarreY, tailleCarre, tailleCarre);
-          if (!autorisationDeJeu) {
-            fill(0);
-            text("GameOver", 310, 100);
-          }
+          image(imgMine, posiCarreX, posiCarreY, tailleCarre , tailleCarre );
         } else {
           int nbMine = getMines(x, y);
           fill(255, 255, 255);
           rect(posiCarreX, posiCarreY, tailleCarre, tailleCarre);
-          fill(0);
+          if (nbMine != 0) {
+            fill(0);
+          }
           text(str(nbMine), posiCarreX +7, posiCarreY +20);
         }
       } else {
-        //Si le jeux est fini les cases passent en rouge
-        if (autorisationDeJeu == false) {
-          fill(255, 0, 0);
-        } else {
-          fill(0, 0, 255);
-        }
+
+        fill(0, 0, 255);
         rect(posiCarreX, posiCarreY, tailleCarre, tailleCarre);
       }
 
@@ -111,7 +105,15 @@ void generateurCarre() {
   }
 }
 
-
+void decouvreTouteLesMines() {
+  for (int g = 0; g < tableau.length; g++) {
+    for (int h = 0; h < tableau.length; h ++) {
+      if (tableau[h][g][0] == 99) {
+        tableau[h][g][1] = 1;
+      }
+    }
+  }
+}
 void creationTableauLimiteCarre() {
   for (int i = 0; i < limiteCarre.length; i++) {
     limiteCarre[i] = i * tailleCarre;
@@ -180,14 +182,17 @@ int getMines(int x, int y) {
 }
 //Fonction qui affiche tous les 0 autours
 void decouvreLesCasesAllentours(int x, int y) {
-  
+
   for (int i = x-1; i <= x+1; i++) {
     for (int j = y -1; j <= y+1; j++) {
       if (!sortie(i, j)) {
         if (tableau[i][j][0] == 0 && tableau[i][j][1] == 0) {
-          tableau[i][j][1] = 1;
           score++;
-          decouvreLesCasesAllentours(i,j);
+          tableau[i][j][1] = 1;
+
+          if (getMines(i, j) == 0) {
+            decouvreLesCasesAllentours(i, j);
+          }
         }
       }
     }
